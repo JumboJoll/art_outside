@@ -6,6 +6,8 @@ import gab.opencv.*;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 import processing.serial.*;
+import javax.swing.JOptionPane;
+
 
 
 Serial myPort;  // Create object from Serial class
@@ -15,6 +17,8 @@ Rectangle[] bounding_boxes;
 ArrayList<PImage> faces = new ArrayList<PImage>();
 PImage src;
 float x_input,y_input;
+final boolean debugPort = true; 
+
 
 PostFX fx;
 PShader shader;
@@ -22,6 +26,7 @@ PShader shader;
 
 void setup() {
   size(1080, 720, P3D);
+  //getPort();
   
   src = loadImage("test.png");
   opencv = new OpenCV(this, src);
@@ -39,9 +44,45 @@ void setup() {
   
   print(Serial.list()[0]);
   // Change this to connect with arduino on your computer
+  
    String portName = Serial.list()[0]; //change the 0 to a 1 or 2 etc. to match your port
-   myPort = new Serial(this, "COM3",  115200); // change "/dev/ttyUSB0" to portName
+   myPort = new Serial(this, portName,  9600); // change "/dev/ttyUSB0" to portName
 }
+
+//void getPort() {
+//  // Allow user to choose serial port
+//    String COMx = "";
+//    try {
+//      if(debugPort) printArray(Serial.list());
+//      int numPorts = Serial.list().length;
+//       if (numPorts != 0) {
+//        if (numPorts >= 2) {
+//          COMx = (String) JOptionPane.showInputDialog(null, 
+//          "Select COM port", 
+//          "Select port", 
+//          JOptionPane.QUESTION_MESSAGE, 
+//          null, 
+//          Serial.list(), 
+//          Serial.list()[0]);
+   
+//          if (COMx == null) exit();
+//          if (COMx.isEmpty()) exit();
+//        }
+//        myPort = new Serial(this, COMx, 9600); // change baud rate to your liking
+//        myPort.bufferUntil('\n'); // buffer until CR/LF appears, but not required..
+//      }
+//      else {
+//        JOptionPane.showMessageDialog(frame,"Device is not connected to the PC");
+//        exit();
+//      }
+//    }
+//    catch (Exception e)
+//    { //Print the type of error
+//      JOptionPane.showMessageDialog(frame,"COM port " + COMx + " is not available (maybe in use by another program)");
+//      println("Error:", e);
+//      exit();
+//    }
+//}
 
 void draw() {
   //change color of background over time and in response to mouse position
@@ -103,12 +144,15 @@ void draw() {
 void serialEvent(Serial myPort) {
   
   try {
+    //println("data received!");
+    
     //put the incoming data into a String - 
     //the '\n' is our end delimiter indicating the end of a complete packet
     in = myPort.readStringUntil('\n');
     // Expects inputs of the format:
     // X: ###, Y: ###, Z: ###,
     // Where ## are the readings from the CPE
+    println(in);
     
     //make sure our data isn't empty before continuing
     if (in != null) {
@@ -131,8 +175,8 @@ void serialEvent(Serial myPort) {
       print("Theta Z: "); println(theta_y);
       println();
       
-      x_input = 3*x_input/4 + map(theta_x, -PI, PI, 0, width)/4;
-      y_input = 3*y_input/4 +  map(theta_y, -PI, PI, 0, height)/4;
+      x_input = map(theta_x, -PI, PI, 0, width);
+      y_input = map(theta_y, -PI, PI, 0, height);
     }
   }
   catch(RuntimeException e) {
