@@ -131,8 +131,8 @@ void serialEvent(Serial myPort) {
       print("Theta Z: "); println(theta_y);
       println();
       
-      x_input = map(theta_x, -PI, PI, 0, width);
-      y_input = map(theta_y, -PI, PI, 0, height);
+      x_input = 3*x_input/4 + map(theta_x, -PI, PI, 0, width)/4;
+      y_input = 3*y_input/4 +  map(theta_y, -PI, PI, 0, height)/4;
     }
   }
   catch(RuntimeException e) {
