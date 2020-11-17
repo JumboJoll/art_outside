@@ -37,9 +37,10 @@ void setup() {
     faces.add(src.get(bounding_boxes[i].x, bounding_boxes[i].y, bounding_boxes[i].width, bounding_boxes[i].height));
   }
   
+  print(Serial.list()[0]);
   // Change this to connect with arduino on your computer
-  String portName = Serial.list()[0]; //change the 0 to a 1 or 2 etc. to match your port
-  myPort = new Serial(this, "/dev/ttyUSB0",  115200); // change "/dev/ttyUSB0" to portName
+   String portName = Serial.list()[0]; //change the 0 to a 1 or 2 etc. to match your port
+   myPort = new Serial(this, "COM3",  115200); // change "/dev/ttyUSB0" to portName
 }
 
 void draw() {
@@ -99,7 +100,7 @@ void draw() {
 }
 
 // Everytime we receive a packet from the CPE this is called
-void serialEvent( Serial myPort) {
+void serialEvent(Serial myPort) {
   
   try {
     //put the incoming data into a String - 
