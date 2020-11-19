@@ -16,7 +16,9 @@ OpenCV opencv;
 Rectangle[] bounding_boxes;
 ArrayList<PImage> faces = new ArrayList<PImage>();
 PImage src;
+PImage bg;
 float x_input,y_input;
+float raw_x,raw_y,raw_z;
 final boolean debugPort = true; 
 
 
@@ -25,11 +27,14 @@ PShader shader;
 
 
 void setup() {
-  size(1080, 720, P3D);
+  size(1900, 1200, P3D);
   //getPort();
   
-  src = loadImage("test.png");
+  src = loadImage("zoomEmbodiedInterfaces.jpg"); 
   opencv = new OpenCV(this, src);
+  
+  bg = loadImage("zoomEmbodiedInterfacesFaceless.jpg");
+  bg.resize(width, height);
   
    // load shaders
    fx = new PostFX(this);  
@@ -86,9 +91,11 @@ void setup() {
 
 void draw() {
   //change color of background over time and in response to mouse position
-  float t = 50 + 30 * sin( frameCount * 0.05f );
+  float t = 50 + 10 * sin( frameCount * 0.05f );
   float t2 = map(x_input+y_input, 0, width+height, 100, 0);
-  background(t+t2, t+t2/2, t);
+  bg.resize(width, height);
+  background(bg);
+  tint(t+t2, t+t2/2, t); //Changed to tint so we can use an image as the background
   
 // set shader parameters so morph speed depends on mouse position
   shader.set("fraction", (float)map(x_input+y_input, 0, width+height, 2, 0));
@@ -98,13 +105,12 @@ void draw() {
   
 
   float z = (height/2) / tan(PI/6);
-  camera(mouseX, height/2, z + map(mouseX+mouseY, 0, width+height, 1000, -z/2), width/2, height/2, 0, 0, 1, 0);
+  camera(raw_x*30, raw_y*30 + height/2, raw_z*30 + map((raw_x+raw_y)*1.5, 0, width+height, 1000, -raw_z/2), width/2, height/2, 0, 0, 1, 0); //Mess with this if you want the object to move more in space
   noFill();
   //stroke(0, 255, 0);
   strokeWeight(2);
   
-  
-  // show bounding boxes on the original image in the background
+  // //show bounding boxes on the original image in the background
   //for (int i = 0; i < bounding_boxes.length; i++) {
   //  rect(bounding_boxes[i].x, 
   //  bounding_boxes[i].y, 
@@ -112,7 +118,7 @@ void draw() {
   //  bounding_boxes[i].height);
   //}
 
-  translate(width / 2, height / 2, 100);
+  translate(width / 2 - 500, height / 2, 600);
   float sphereZ = map(constrain(x_input+y_input, 0, (width+height)/2), 0, (width+height)/2, 200, 0);
     
   for (int i = 0; i < faces.size(); i++) {
@@ -122,6 +128,7 @@ void draw() {
     rotateZ(map(x_input, 0, height, -PI, PI));
     beginShape();
     texture(img);
+    noTint(); //Limit the impact of the tint so it doesn't overwhelm
     float distance = (i - i/2) * sphereZ;
     vertex(-100 + distance, -100 + distance, sphereZ, 0, 0);
     vertex(100 + distance, -100 + distance, sphereZ, img.width, 0);
@@ -133,7 +140,7 @@ void draw() {
   // add postfx
   fx.render()
     .vignette(map(x_input+y_input, 0, width+height, 2, 0), 0.35)
-    .saturationVibrance(map(x_input+y_input, 0, width+height, -1, 0.2), map(x_input+y_input, 0, width+height, -1, 0.2))
+    .saturationVibrance(map(x_input+y_input, 0, width+height, -1, 0.5), map(x_input+y_input, 0, width+height, -1, 0.5))
     .pixelate(map(x_input+y_input, 0, width+height, width/3, width))
     .noise(map(x_input+y_input, 0, width+height, 0.3, 0),
           map(x_input+y_input, 0, width+height, 1, 0))
@@ -161,22 +168,22 @@ void serialEvent(Serial myPort) {
       // Split by commas
       String comma[] = in.split(",");
       // Parse values and calculate angles
-      float x, y, z, theta_x, theta_y; 
-      x = float(comma[0].split(":")[1]);
-      y = float(comma[1].split(":")[1]);
-      z = float(comma[2].split(":")[1]);
-      theta_x = atan2(x, y); 
-      theta_y = atan2(z, y); 
+      float theta_x, theta_y; 
+      raw_x = float(comma[0].split(":")[1]);
+      raw_y = float(comma[1].split(":")[1]);
+      raw_z = float(comma[2].split(":")[1]);
+      theta_x = atan2(raw_x, raw_y); 
+      theta_y = atan2(raw_z, raw_y); 
       
-      print("X: "); println(x);
-      print("Y: "); println(y);
-      print("Z: "); println(z);
+      print("X: "); println(raw_x);
+      print("Y: "); println(raw_y);
+      print("Z: "); println(raw_z);
       print("Theta X: "); println(theta_x);
       print("Theta Z: "); println(theta_y);
       println();
       
-      x_input = map(theta_x, -PI, PI, 0, width);
-      y_input = map(theta_y, -PI, PI, 0, height);
+      x_input = 3*x_input/4 + map(theta_x, -PI, PI, 0, width)/4; //Change these ratios for smoothness! The ratios should add up to 1.
+      y_input = 3*y_input/4 +  map(theta_y, -PI, PI, 0, height)/4; //Could add a small amount to the theta_x and theta_y over time for the choreo idea. May need bounds.
     }
   }
   catch(RuntimeException e) {
